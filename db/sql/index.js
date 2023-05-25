@@ -46,7 +46,7 @@ let reviews = [];
 const seedReviewData = async() => {
   pool.connect()
   .then((client) => {
-    client.query('COPY reviews FROM ' + path.join(__dirname, `../../../../Downloads/reviews.csv`) + ' DELIMITER ; CSV HEADER')
+    client.query('COPY reviews FROM ' + path.join(__dirname, `../../../../Downloads/reviews.csv`) + ' DELIMITER "," CSV HEADER')
     .then(() => {
       console.log('reviews finished copying');
       client.release();
@@ -69,8 +69,7 @@ const seedReviewData = async() => {
 clearDB()
 .then(() => createDB())
 .then(() => parsecsv('characteristics'))
-
-// .then(() => seedReviewData())
+.then(() => seedReviewData())
 
 
 
