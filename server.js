@@ -1,6 +1,8 @@
 const express = require('express');
-const postgres = require('./db/sql/index.js')
+const { pool, prepareDB} = require('./db/sql/index.js')
 require('dotenv').config();
+
+prepareDB(pool); // reset, recreate, and reseed database
 
 const app = express();
 
