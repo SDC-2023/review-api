@@ -60,7 +60,6 @@ const prepareDB = async(pool) => {
 
     const characteristicsBuildCommand = 'UPDATE characteristics SET total_votes = revs.votes, average = revs.average FROM (SELECT characteristic_id, COUNT(*) as votes, AVG(value) as average FROM characteristics_reviews GROUP BY characteristic_id) AS revs WHERE revs.characteristic_id = characteristics.id;'
 
-    const convertReviewDatetoISOCommand = 'SELECT TO_TIMESTAMP(date/1000) FROM reviews'
 
     const reviewsCbConvertData = () => {
       pool.connect()
@@ -103,11 +102,6 @@ const prepareDB = async(pool) => {
       throw new Error(err);
   }
 }
-
-// UPDATE characteristics SET total_votes = revs.votes, average = revs.average FROM (SELECT characteristic_id, COUNT(*) as votes, AVG(value) as average FROM characteristics_reviews GROUP BY characteristic_id) AS revs WHERE revs.characteristic_id = characteristics.id;
-
-// 'INSERT INTO ratings (product_id) SELECT DISTINCT product_id FROM reviews; UPDATE ratings rat SET one = rev.sum FROM (select product_id, rating, COUNT(rating) as sum FROM reviews WHERE rating = 1 GROUP BY product_id, rating) AS rev WHERE rat.product_id = rev.product_id; UPDATE ratings rat SET two = rev.sum FROM (select product_id, rating, COUNT(rating) as sum FROM reviews WHERE rating = 2 GROUP BY product_id, rating) AS rev WHERE rat.product_id = rev.product_id; UPDATE ratings SET three = rev.sum FROM (select product_id, rating, COUNT(rating) as sum FROM reviews WHERE rating = 3 GROUP BY product_id, rating) AS rev WHERE ratings.product_id = rev.product_id; UPDATE ratings SET four = rev.sum FROM (select product_id, rating, COUNT(rating) as sum FROM reviews WHERE rating = 4 GROUP BY product_id, rating) AS rev WHERE ratings.product_id = rev.product_id; UPDATE ratings SET five = rev.sum FROM (select product_id, rating, COUNT(rating) as sum FROM reviews WHERE rating = 5 GROUP BY product_id, rating) AS rev WHERE ratings.product_id = rev.product_id; UPDATE ratings SET recommended = rev.t, not_recommended = rev.f FROM (SELECT product_id, SUM(CASE WHEN recommend=true THEN 1 ELSE 0 END) as t, SUM(CASE WHEN recommend=false THEN 1 ELSE 0 END) as f FROM reviews GROUP BY product_id) as rev WHERE ratings.product_id = rev.product_id;'
-
 
 
 exports.pool = pool;
