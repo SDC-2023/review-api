@@ -102,7 +102,5 @@ const prepareDB = async(pool) => {
   }
 }
 
-// INSERT INTO reviews (product_id, rating, date, summary, body, recommend, reviewer_name, reviewer_email) VALUES (1, 4, EXTRACT(EPOCH FROM CURRENT_TIME), 'jackjackjackjackjack', 'ackjackjackjackjackackjackjackjackjack', true, 'jackjack', 'jack@email.com');
-
 exports.pool = pool;
 exports.prepareDB = prepareDB;

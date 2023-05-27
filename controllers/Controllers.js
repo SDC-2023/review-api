@@ -64,7 +64,6 @@ module.exports.getReviewsMeta = (req, res) => {
 
 module.exports.postReviews = (req, res) => {
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
-  console.log(req.body);
 
   if (!product_id || !rating || !summary || !body || !recommend || !name || !email || !photos || !characteristics) {
     throw new Error ('Did not supply all query parameters')
