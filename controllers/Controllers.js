@@ -52,6 +52,9 @@ module.exports.getReviewsMeta = (req, res) => {
       .then((data) => {
         res.status(200).send(data.rows)
       })
+      .catch((err) => {
+        throw new Error (err);
+      })
     })
   } catch (err) {
     console.log(err);
@@ -60,8 +63,100 @@ module.exports.getReviewsMeta = (req, res) => {
 }
 
 module.exports.postReviews = (req, res) => {
-  try {
+  const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
+  console.log(req.body);
 
+  if (!product_id || !rating || !summary || !body || !recommend || !name || !email || !photos || !characteristics) {
+    throw new Error ('Did not supply all query parameters')
+  }
+
+  let ratingsColumn;
+  switch (rating) {
+    case 1:
+      ratingsColumn = "one";
+      break;
+    case 2:
+      ratingsColumn = "two";
+      break;
+    case 3:
+      ratingsColumn = "three";
+      break;
+    case 4:
+      ratingsColumn = "four";
+      break;
+    case 5:
+      ratingsColumn = "five";
+      break;
+  }
+
+  let recommended;
+  if (recommend) {
+    recommended = "recommended";
+  } else {
+    recommended = "not_recommended";
+  }
+
+  try {
+    pool.connect()
+    .then((client) => {
+      client.query(`INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`, [product_id, rating, summary, body, recommend, name, email])
+      .then((data) => {
+        console.log(data.rows[0].id);
+        let review_id = data.rows[0].id;
+
+        // add to reviews_photos with review_id foreign key
+        photos.forEach((photo) =>
+          pool.connect((err, client, release) =>
+            client.query(`INSERT INTO reviews_photos (review_id, url) VALUES($1, $2)`, [review_id, photo], (err) => {
+              if (err) {
+                throw new Error ('Could not upload reviews_photos')
+              }
+              console.log(`updated reviews_photos ${photo}`)
+              client.release();
+              }
+            )
+          )
+        );
+
+        // add to characteristics_reviews with review_id foreign key
+        Object.keys(characteristics).forEach((characteristic_id) =>
+          pool.connect((err, client, release) =>
+            client.query(`INSERT INTO characteristics_reviews (characteristic_id, review_id, value) VALUES($1, $2, $3)`, [characteristic_id, review_id, characteristics[characteristic_id]], (err) => {
+              if (err) {
+                throw new Error ('Could not update all characteristics')
+              }
+              console.log(`updated characteristics ${characteristic_id}`)
+              client.release();
+              })
+          )
+        )
+
+      // update the ratings (meta) table & characteristics table's average (meta average)
+      pool.connect()
+      .then((client) =>
+        client.query(`UPDATE ratings SET "${ratingsColumn}" = ${ratingsColumn} + 1, ${recommended}= ${recommended} + 1 WHERE product_id = $1`, [product_id], (err) => {
+          if (err) {
+            throw new Error ('Could not update all ratings')
+          }
+          console.log(`updated ratings for product_id ${product_id} with rating added to ${ratingsColumn} and recommended as ${recommended}`)
+          client.release();
+          })
+      )
+
+      Object.keys(characteristics).forEach((characteristic_id) => {
+        pool.connect((err, client, release) =>
+          client.query(`UPDATE characteristics SET average = (average * total_votes + $1) / (total_votes + 1), total_votes = total_votes + 1 WHERE id = $2`, [characteristics[characteristic_id], characteristic_id], (err) => {
+            if (err) {
+              throw new Error ('Could not update all characteristics')
+            }
+            console.log(`updated characteristic_id ${characteristic_id}`)
+            client.release();
+            }
+          )
+        )
+        })
+      }).then(() => res.status(201).send('success'))
+    })
   } catch (err) {
     res.status(400).send('Oops')
   }
