@@ -8,7 +8,7 @@ module.exports.getReviews = (req, res) => {
       case 'newest':
         sort = "date DESC"; // newest first
       case 'helpful':
-        sort = "helpfulness DESC"; // most helpful at the top
+        sort = 'helpfulness DESC'; // most helpful at the top
       case 'relevant':
     }
     page = page ? page : 1;
@@ -16,20 +16,21 @@ module.exports.getReviews = (req, res) => {
     if (!product_id || !sort) {
       throw new Error(`Missing headers. Received product_id: ${product_id}, sort: ${sort}`)
     }
+    console.log(sort);
     pool.connect()
     .then((client) => {
       // get all reviews with product_id from reviews table
       // order by sort
       // offset by (page - 1) * count (page 3 * 5 count/page means starting at result 10)
       // limit by count
-      client.query(`SELECT reviews.id AS review_id, array_agg(json_build_object('id', reviews_photos.id::varchar, 'url', reviews_photos.url)) as photos, rating, summary, recommend, response, body, TO_TIMESTAMP(date/1000), reviewer_name, helpfulness FROM reviews FULL OUTER JOIN reviews_photos ON reviews_photos.review_id = reviews.id WHERE reviews.product_id= $1 AND reviews.reported = false GROUP BY reviews.id ORDER BY $2 OFFSET $3 LIMIT $4 ;`, [product_id, sort, (page - 1) * count, count])
+      client.query(`SELECT reviews.id AS review_id, array_agg(json_build_object('id', reviews_photos.id::varchar, 'url', reviews_photos.url)) as photos, rating, summary, recommend, response, body, TO_TIMESTAMP(date/1000) as date, reviewer_name, helpfulness FROM reviews FULL OUTER JOIN reviews_photos ON reviews_photos.review_id = reviews.id WHERE reviews.product_id= $1 AND reviews.reported = false GROUP BY reviews.id ORDER BY ${sort} OFFSET ${(page - 1) * count} LIMIT ${count};`, [product_id])
       .then((data) => {
-        res.status(200).send({product: product_id, page: page, count: count, results: [data.rows]});
+        res.status(200).send({product: product_id, page: page, count: count, results: data.rows});
       })
     })
   } catch (err) {
     console.log(err);
-    res.status(400).send('Oop')
+    res.status(400).send('Could not retrieve reviews. Ensure you are sending a product_id and a sort')
   }
 }
 
