@@ -69,28 +69,37 @@ module.exports.postReviews = (req, res) => {
 
 module.exports.putHelpful = (req, res) => {
   try {
+    const { review_id } = req.params;
 
+    if (!review_id) {
+      throw new Error('Be sure you submit the review_id');
+    }
+
+    pool.connect()
+    .then((client) => {
+      client.query('UPDATE reviews SET helpfulness = helpfulness + 1 WHERE id = $1', [review_id])
+      .then(() => res.status(201).send('success'))
+    })
   } catch (err) {
-    res.status(400).send('Oops')
+    res.status(400).send('Failed to mark review as helpful')
   }
 }
 
 module.exports.putReport = (req, res) => {
   try {
-    console.log(req.params, req.headers, req.query)
     const { review_id } = req.params;
 
     if (!review_id) {
-      throw new Error('Be sure you submit review_id');
+      throw new Error('Be sure you submit the review_id');
     }
 
     pool.connect()
     .then((client) => {
       client.query('UPDATE reviews SET reported = true WHERE id = $1', [review_id])
-      .then((data) => res.status(201).send('success'))
+      .then(() => res.status(201).send('success'))
     })
 
   } catch (err) {
-    res.status(400).send('Oops')
+    res.status(400).send('Failed to report review')
   }
 }
