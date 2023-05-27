@@ -7,9 +7,12 @@ module.exports.getReviews = (req, res) => {
     switch (sort) {
       case 'newest':
         sort = "date DESC"; // newest first
+        break;
       case 'helpful':
         sort = 'helpfulness DESC'; // most helpful at the top
+        break;
       case 'relevant':
+
     }
     page = page ? page : 1;
     count = count ? count : 5;
@@ -30,16 +33,25 @@ module.exports.getReviews = (req, res) => {
     })
   } catch (err) {
     console.log(err);
-    res.status(400).send('Could not retrieve reviews. Ensure you are sending a product_id and a sort')
+    res.status(400).send('Could not retrieve reviews. Ensure you are sending a product_id and a sort');
   }
 }
 
 
 module.exports.getReviewsMeta = (req, res) => {
   try {
-
+    console.log(req.headers);
+    const { product_id } = req.headers;
+    pool.connect()
+    .then((client) => {
+      client.query(`SELECT ratings.product_id, json_build_object('1', one, '2', two, '3', three, '4', four, '5', five) AS ratings, json_build_object(0, recommended, 1, not_recommended) AS recommended, json_agg(json_build_object(name, json_build_object('id', id, 'value', average))) AS characteristics FROM ratings FULL JOIN characteristics ON characteristics.product_id = ratings.product_id WHERE ratings.product_id = $1 GROUP BY ratings.product_id`, [product_id])
+      .then((data) => {
+        res.status(200).send(data.rows)
+      })
+    })
   } catch (err) {
-    res.status(400).send('Oops')
+    console.log(err);
+    res.status(400).send('Oops');
   }
 }
 
