@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.23% </span>
+                <span class="strong">38.09% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>37/105</span>
+                <span class='fraction'>40/105</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">28.88% </span>
+                <span class="strong">31.91% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>13/45</span>
+                <span class='fraction'>15/47</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">32.14% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>9/28</span>
+                <span class='fraction'>9/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.23% </span>
+                <span class="strong">38.09% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>37/105</span>
+                <span class='fraction'>40/105</span>
             </div>
         
             
@@ -316,26 +316,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -526,8 +526,8 @@ module.exports.getReviews = (req, res) =&gt; {
 module.exports.getReviewsMeta = (req, res) =&gt; {
   try {
     const { product_id } = req.headers;
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (!product_id) {
-<span class="cstat-no" title="statement not covered" >      throw new Error('Be sure to send in product_id');</span>
+    if (!product_id) {
+      throw new Error('Be sure to send in product_id');
     }
 &nbsp;
     pool.connect()
@@ -535,15 +535,15 @@ module.exports.getReviewsMeta = (req, res) =&gt; {
       client.query(`SELECT ratings.product_id, json_build_object('1', one, '2', two, '3', three, '4', four, '5', five) AS ratings, json_build_object(0, recommended, 1, not_recommended) AS recommended, json_agg(json_build_object(name, json_build_object('id', id, 'value', average))) AS characteristics FROM ratings FULL JOIN characteristics ON characteristics.product_id = ratings.product_id WHERE ratings.product_id = $1 GROUP BY ratings.product_id`, [product_id])
       .then((data) =&gt; {
         client.release();
-        res.status(200).send(data.rows[0]);
-      })
-      .catch(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {
-<span class="cstat-no" title="statement not covered" >        throw new Error (err);</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!data.rows.length) {
+<span class="cstat-no" title="statement not covered" >          res.status(400).send('No product with requested product id!');</span>
+        } else {
+          res.status(200).send(data.rows[0]);
+        }
       })
     })
   } catch (err) {
-<span class="cstat-no" title="statement not covered" >    console.log(err);</span>
-<span class="cstat-no" title="statement not covered" >    res.status(400).send('Oops');</span>
+    res.status(400).send('Oops');
   }
 }
 &nbsp;
@@ -694,7 +694,7 @@ module.exports.putReport = <span class="fstat-no" title="function not covered" >
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2023-05-30T17:57:42.340Z
+                at 2023-05-30T18:02:34.242Z
             </div>
         <script src="../prettify.js"></script>
         <script>

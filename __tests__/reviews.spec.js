@@ -81,5 +81,13 @@ describe('Get & put routes', () => {
       expect(res.status).toEqual(400);;
     })
   })
+
+  test('Should reject reviews/meta request when no product_id is supplied', () => {
+    return request(app)
+    .get('/api/reviews/meta')
+    .then((res) => {
+      expect(res.status).toEqual(400);
+    })
+  })
 })
 

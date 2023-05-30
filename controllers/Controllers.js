@@ -54,14 +54,14 @@ module.exports.getReviewsMeta = (req, res) => {
       client.query(`SELECT ratings.product_id, json_build_object('1', one, '2', two, '3', three, '4', four, '5', five) AS ratings, json_build_object(0, recommended, 1, not_recommended) AS recommended, json_agg(json_build_object(name, json_build_object('id', id, 'value', average))) AS characteristics FROM ratings FULL JOIN characteristics ON characteristics.product_id = ratings.product_id WHERE ratings.product_id = $1 GROUP BY ratings.product_id`, [product_id])
       .then((data) => {
         client.release();
-        res.status(200).send(data.rows[0]);
-      })
-      .catch((err) => {
-        throw new Error (err);
+        if (!data.rows.length) {
+          res.status(400).send('No product with requested product id!');
+        } else {
+          res.status(200).send(data.rows[0]);
+        }
       })
     })
   } catch (err) {
-    console.log(err);
     res.status(400).send('Oops');
   }
 }
