@@ -5,6 +5,8 @@ const { pool } = require('../db/sql/index.js');
 
 // Create server instance
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({extended: true}))
 app.use('/api', routes);
 
 afterAll(() => {
@@ -89,5 +91,20 @@ describe('Get & put routes', () => {
       expect(res.status).toEqual(400);
     })
   })
+
 })
 
+describe("Post requests", () => {
+
+  test("Should post review to database", () => {
+    let postData = {"product_id":1,"rating":5,"summary":"myspecialsummary","body":"mysasdpecsdfasdf","recommend":true,"name":"my000000000000000000000 name","email":"not my email","photos":["url1","urldsdsdaff2","utrfgrl3"],"characteristics":{"1":1,"2":3,"3":4,"4":1}}
+    return request(app)
+    .post('/api/reviews')
+    .set('Content-Type', 'application/json')
+    .send(postData)
+    .then((res) => {
+      expect(res.status).toEqual(201);
+      expect(res.text).toEqual("success");
+    })
+  })
+})
