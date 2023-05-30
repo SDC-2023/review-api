@@ -145,24 +145,26 @@ module.exports.postReviews = async(req, res) => {
               })
         )
 
-        const d = async() => Object.keys(characteristics).map(async(characteristic_id) =>
-          await pool.connect((err, client, release) =>
+        const d = async() => Object.keys(characteristics).map((characteristic_id) =>
+          pool.connect((err, client, release) =>
             client.query(`UPDATE characteristics SET average = (average * total_votes + $1) / (total_votes + 1), total_votes = total_votes + 1 WHERE id = $2`, [characteristics[characteristic_id], characteristic_id], (err) => {
               if (err) {
                 throw new Error ('Could not update all characteristics')
               }
-              // console.log(`updated characteristic_id ${characteristic_id}`)
+              console.log(`updated characteristic_id ${characteristic_id}`)
               release();
               }
             )
           )
         )
 
-        return Promise.all([a(), b(), c(), d()])
+        Promise.all([a(), b(), c(), d()])
+        .then(() => res.status(201).send('success'))
+        .catch(err => res.status(400).send('Could not post review'))
      })
-   }).then(() => res.status(201).send('success'))
+   })
   } catch (err) {
-    res.status(400).send('Oops')
+    res.status(400).send('Could not post review')
   }
 }
 

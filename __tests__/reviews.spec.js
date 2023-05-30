@@ -57,6 +57,35 @@ describe('Get & put routes', () => {
     })
   })
 
+  test('Should retrieve reviews, report, and then not return in subsequent calls to reviews', () => {
+    // expect.assertions(3);
+
+    let product_id = 321234;
+    let review_id;
+
+    return request(app)
+    .get(`/api/reviews/`) // get the reviews for this product
+    .set({"product_id": product_id, "page": 1, "count": 5, "sort": "helpful"})
+    .then((res) => {
+      review_id = res.body.results[0].review_id; // collect the review_id
+      return request(app)
+      .put(`/api/reviews/${review_id}/report`) // make a put request to implement helpfulness
+      .then((res) => {
+        expect(res.status).toEqual(201);
+        expect(res.text).toEqual('success'); // expect the put request to be successful
+      })
+    })
+    .then(() => {
+      return request(app)
+      .get('/api/reviews/')
+      .set({"product_id": product_id, "page": 1, "count": 5, "sort": "helpful"})
+      .then((res) => {
+        let ind = Number(res.body.results.findIndex((item) => item.review_id === review_id)); // be sure to
+        expect(ind).toEqual(-1);
+      })
+    })
+  })
+
   test('Should reject reviews request when no product id or sort is not supplied', () => {
 
     return request(app)
