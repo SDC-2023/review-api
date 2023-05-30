@@ -36,7 +36,6 @@ module.exports.getReviews = (req, res) => {
       })
     })
   } catch (err) {
-    console.log(err);
     res.status(400).send('Could not retrieve reviews. Ensure you are sending a product_id and a sort');
   }
 }
@@ -66,7 +65,7 @@ module.exports.getReviewsMeta = (req, res) => {
   }
 }
 
-module.exports.postReviews = (req, res) => {
+module.exports.postReviews = async(req, res) => {
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
 
   if (!product_id || !rating || !summary || !body || !recommend || !name || !email || !photos || !characteristics) {
@@ -102,64 +101,66 @@ module.exports.postReviews = (req, res) => {
   try {
     pool.connect()
     .then((client) => {
-      client.query(`INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`, [product_id, rating, summary, body, recommend, name, email])
-      .then((data) => {
-        console.log(data.rows[0].id);
+      return client.query(`INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`, [product_id, rating, summary, body, recommend, name, email])
+      .then(async(data) => {
         let review_id = data.rows[0].id;
 
         // add to reviews_photos with review_id foreign key
-        photos.forEach((photo) =>
+        const a = () => photos.map((photo) =>
           pool.connect((err, client, release) =>
             client.query(`INSERT INTO reviews_photos (review_id, url) VALUES($1, $2)`, [review_id, photo], (err) => {
               if (err) {
                 throw new Error ('Could not upload reviews_photos')
               }
               console.log(`updated reviews_photos ${photo}`)
-              client.release();
+              release();
               }
             )
           )
         );
 
         // add to characteristics_reviews with review_id foreign key
-        Object.keys(characteristics).forEach((characteristic_id) =>
+        const b = () => Object.keys(characteristics).map((characteristic_id) =>
           pool.connect((err, client, release) =>
             client.query(`INSERT INTO characteristics_reviews (characteristic_id, review_id, value) VALUES($1, $2, $3)`, [characteristic_id, review_id, characteristics[characteristic_id]], (err) => {
               if (err) {
                 throw new Error ('Could not update all characteristics')
               }
               console.log(`updated characteristics ${characteristic_id}`)
-              client.release();
+              release();
               })
           )
         )
 
-      // update the ratings (meta) table & characteristics table's average (meta average)
-      pool.connect()
-      .then((client) =>
-        client.query(`UPDATE ratings SET "${ratingsColumn}" = ${ratingsColumn} + 1, ${recommended} = ${recommended} + 1 WHERE product_id = $1`, [product_id], (err) => {
-          if (err) {
-            throw new Error ('Could not update all ratings')
-          }
-          console.log(`updated ratings for product_id ${product_id} with rating added to ${ratingsColumn} and recommended as ${recommended}`)
-          client.release();
-          })
-      )
+        // update the ratings (meta) table & characteristics table's average (meta average)
+        const c = () =>
+          pool.connect()
+          .then((client) =>
+            client.query(`UPDATE ratings SET "${ratingsColumn}" = ${ratingsColumn} + 1, ${recommended} = ${recommended} + 1 WHERE product_id = $1`, [product_id], (err) => {
+              if (err) {
+                throw new Error ('Could not update all ratings')
+              }
+              console.log(`updated ratings for product_id ${product_id} with rating added to ${ratingsColumn} and recommended as ${recommended}`)
+              client.release();
+              })
+        )
 
-      Object.keys(characteristics).forEach((characteristic_id) => {
-        pool.connect((err, client, release) =>
-          client.query(`UPDATE characteristics SET average = (average * total_votes + $1) / (total_votes + 1), total_votes = total_votes + 1 WHERE id = $2`, [characteristics[characteristic_id], characteristic_id], (err) => {
-            if (err) {
-              throw new Error ('Could not update all characteristics')
-            }
-            console.log(`updated characteristic_id ${characteristic_id}`)
-            client.release();
-            }
+        const d = async() => Object.keys(characteristics).map(async(characteristic_id) =>
+          await pool.connect((err, client, release) =>
+            client.query(`UPDATE characteristics SET average = (average * total_votes + $1) / (total_votes + 1), total_votes = total_votes + 1 WHERE id = $2`, [characteristics[characteristic_id], characteristic_id], (err) => {
+              if (err) {
+                throw new Error ('Could not update all characteristics')
+              }
+              // console.log(`updated characteristic_id ${characteristic_id}`)
+              release();
+              }
+            )
           )
         )
-        })
-      }).then(() => res.status(201).send('success'))
-    })
+
+        return Promise.all([a(), b(), c(), d()])
+     })
+   }).then(() => res.status(201).send('success'))
   } catch (err) {
     res.status(400).send('Oops')
   }
