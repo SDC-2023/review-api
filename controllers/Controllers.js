@@ -2,7 +2,6 @@ const { pool } = require('../db/sql/index.js');
 
 module.exports.getReviews = (req, res) => {
   try {
-
     let { page, count, sort, product_id } = req.headers;
     switch (sort) {
       case 'newest':
@@ -28,6 +27,7 @@ module.exports.getReviews = (req, res) => {
       // limit by count
       client.query(`SELECT reviews.id AS review_id, array_agg(json_build_object('id', reviews_photos.id::varchar, 'url', reviews_photos.url)) as photos, rating, summary, recommend, response, body, TO_TIMESTAMP(date/1000) as date, reviewer_name, helpfulness FROM reviews FULL OUTER JOIN reviews_photos ON reviews_photos.review_id = reviews.id WHERE reviews.product_id= $1 AND reviews.reported = false GROUP BY reviews.id ORDER BY ${sort} OFFSET ${(page - 1) * count} LIMIT ${count};`, [product_id])
       .then((data) => {
+        client.release();
         res.status(200).send({product: product_id, page: page, count: count, results: data.rows});
       })
     })
@@ -41,7 +41,6 @@ module.exports.getReviews = (req, res) => {
 module.exports.getReviewsMeta = (req, res) => {
   try {
     const { product_id } = req.headers;
-
     if (!product_id) {
       throw new Error('Be sure to send in product_id');
     }
@@ -50,7 +49,8 @@ module.exports.getReviewsMeta = (req, res) => {
     .then((client) => {
       client.query(`SELECT ratings.product_id, json_build_object('1', one, '2', two, '3', three, '4', four, '5', five) AS ratings, json_build_object(0, recommended, 1, not_recommended) AS recommended, json_agg(json_build_object(name, json_build_object('id', id, 'value', average))) AS characteristics FROM ratings FULL JOIN characteristics ON characteristics.product_id = ratings.product_id WHERE ratings.product_id = $1 GROUP BY ratings.product_id`, [product_id])
       .then((data) => {
-        res.status(200).send(data.rows)
+        client.release();
+        res.status(200).send(data.rows[0]);
       })
       .catch((err) => {
         throw new Error (err);
@@ -133,7 +133,7 @@ module.exports.postReviews = (req, res) => {
       // update the ratings (meta) table & characteristics table's average (meta average)
       pool.connect()
       .then((client) =>
-        client.query(`UPDATE ratings SET "${ratingsColumn}" = ${ratingsColumn} + 1, ${recommended}= ${recommended} + 1 WHERE product_id = $1`, [product_id], (err) => {
+        client.query(`UPDATE ratings SET "${ratingsColumn}" = ${ratingsColumn} + 1, ${recommended} = ${recommended} + 1 WHERE product_id = $1`, [product_id], (err) => {
           if (err) {
             throw new Error ('Could not update all ratings')
           }
@@ -172,7 +172,10 @@ module.exports.putHelpful = (req, res) => {
     pool.connect()
     .then((client) => {
       client.query('UPDATE reviews SET helpfulness = helpfulness + 1 WHERE id = $1', [review_id])
-      .then(() => res.status(201).send('success'))
+      .then(() => {
+        client.release();
+        res.status(201).send('success');
+      })
     })
   } catch (err) {
     res.status(400).send('Failed to mark review as helpful')
@@ -190,7 +193,10 @@ module.exports.putReport = (req, res) => {
     pool.connect()
     .then((client) => {
       client.query('UPDATE reviews SET reported = true WHERE id = $1', [review_id])
-      .then(() => res.status(201).send('success'))
+      .then(() => {
+        client.release();
+        res.status(201).send('success');
+      })
     })
 
   } catch (err) {

@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 const { from } = require('pg-copy-streams');
-const csv = require('csv-parser')
 dotenv.config();
 
 // Create new client
@@ -89,11 +88,15 @@ const prepareDB = async(pool) => {
       upload(pool, characteristicsReviewsCommand, 'characteristic_reviews', characteristicsCbCharacteristicsBuild, () => updateIdSequence('characteristics_reviews'))
     }
 
-    const reviewCbCharacteristics = () => {upload(pool, characteristicsCommand, 'characteristics', characteristicsCbCharacteristicsReviews)}; // upload characteristics file to db, then upload the characteristics_reviews which references the reviews and characteristics id
+    const reviewCbCharacteristics = () => {
+      upload(pool, characteristicsCommand, 'characteristics', characteristicsCbCharacteristicsReviews)
+    }; // upload characteristics file to db, then upload the characteristics_reviews which references the reviews and characteristics id
 
-    const reviewCbPhotos = () => {upload(pool, photosCommand, 'reviews_photos', () => updateIdSequence('reviews_photos'))}; // upload the photos after you have the reviews uploaded since it references review id
+    const reviewCbPhotos = () => {
+      upload(pool, photosCommand, 'reviews_photos', () => updateIdSequence('reviews_photos'))
+    }; // upload the photos after you have the reviews uploaded since it references review id
 
-    upload(pool, reviewsCommand, 'reviews', () => updateIdSequence('reviews'), reviewCbPhotos, reviewCbCharacteristics, reviewCbRatings); // upload reviews file to db, then we can read and build the photos and characteristics csv files, as well as building the meta-table for ratings from the review data
+    upload(pool, reviewsCommand, 'reviews', () => updateIdSequence('reviews'), reviewCbPhotos, reviewCbCharacteristics, reviewCbRatings); // upload reviews file to db, then we can read and build the photos and characteristics csv files, as well as building the meta-table for ratings from the review data and upating the sequence for the reviews' ids column
 
 
   } catch(err) {
