@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "start": "brew services restart postgresql@14 && nodemon server.js",
     "mongo-start": "brew services restart mongodb-community@6.0 && nodemon server.js"
   },

@@ -28,7 +28,11 @@ module.exports.getReviews = (req, res) => {
       client.query(`SELECT reviews.id AS review_id, array_agg(json_build_object('id', reviews_photos.id::varchar, 'url', reviews_photos.url)) as photos, rating, summary, recommend, response, body, TO_TIMESTAMP(date/1000) as date, reviewer_name, helpfulness FROM reviews FULL OUTER JOIN reviews_photos ON reviews_photos.review_id = reviews.id WHERE reviews.product_id= $1 AND reviews.reported = false GROUP BY reviews.id ORDER BY ${sort} OFFSET ${(page - 1) * count} LIMIT ${count};`, [product_id])
       .then((data) => {
         client.release();
-        res.status(200).send({product: product_id, page: page, count: count, results: data.rows});
+        if (!data.rows.length) {
+          res.status(400).send('No product with requested product id!');
+        } else {
+          res.status(200).send({product: product_id, page: page, count: count, results: data.rows});
+        }
       })
     })
   } catch (err) {
