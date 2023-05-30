@@ -1,6 +1,7 @@
 const { pool } = require('../db/sql/index.js');
 
 module.exports.getReviews = (req, res) => {
+  console.log(req.headers)
   try {
     let { page, count, sort, product_id } = req.headers;
     switch (sort) {
