@@ -10,6 +10,8 @@ export const options = {
 };
 
 export default function () {
-  http.get('http://localhost:3000/api/reviews/431/helpful',);
+  let review_id = Math.floor(Math.random() * 1000000 + 1);
+
+  http.put(`http://localhost:3000/api/reviews/${review_id}/helpful`,);
   sleep(1);
 }

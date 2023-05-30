@@ -68,7 +68,6 @@ module.exports.getReviewsMeta = (req, res) => {
 
 module.exports.postReviews = async(req, res) => {
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
-
   if (!product_id || !rating || !summary || !body || !recommend || !name || !email || !photos || !characteristics) {
     throw new Error ('Did not supply all query parameters')
   }
@@ -113,7 +112,7 @@ module.exports.postReviews = async(req, res) => {
               if (err) {
                 throw new Error ('Could not upload reviews_photos')
               }
-              console.log(`updated reviews_photos ${photo}`)
+              // console.log(`updated reviews_photos ${photo}`)
               release();
               }
             )
@@ -127,7 +126,7 @@ module.exports.postReviews = async(req, res) => {
               if (err) {
                 throw new Error ('Could not update all characteristics')
               }
-              console.log(`updated characteristics ${characteristic_id}`)
+              // console.log(`updated characteristics ${characteristic_id}`)
               release();
               })
           )
@@ -141,7 +140,7 @@ module.exports.postReviews = async(req, res) => {
               if (err) {
                 throw new Error ('Could not update all ratings')
               }
-              console.log(`updated ratings for product_id ${product_id} with rating added to ${ratingsColumn} and recommended as ${recommended}`)
+              // console.log(`updated ratings for product_id ${product_id} with rating added to ${ratingsColumn} and recommended as ${recommended}`)
               client.release();
               })
         )
@@ -152,7 +151,7 @@ module.exports.postReviews = async(req, res) => {
               if (err) {
                 throw new Error ('Could not update all characteristics')
               }
-              console.log(`updated characteristic_id ${characteristic_id}`)
+              // console.log(`updated characteristic_id ${characteristic_id}`)
               release();
               }
             )

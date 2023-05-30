@@ -10,6 +10,7 @@ export const options = {
 };
 
 export default function () {
-  http.get('http://localhost:3000/api/reviews',{headers: {"product_id": 1, sort: "helpful"}});
+  let product_id = Math.floor(Math.random() * 1000000 + 1);
+  http.get('http://localhost:3000/api/reviews',{headers: {"product_id": product_id, sort: "helpful"}});
   sleep(1);
 }
