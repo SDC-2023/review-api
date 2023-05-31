@@ -59,6 +59,45 @@ const prepareDB = async(pool) => {
 
     const characteristicsBuildCommand = 'UPDATE characteristics SET total_votes = revs.votes, average = revs.average FROM (SELECT characteristic_id, COUNT(*) as votes, AVG(value) as average FROM characteristics_reviews GROUP BY characteristic_id) AS revs WHERE revs.characteristic_id = characteristics.id;'
 
+    const photosIndexCommand = 'CREATE INDEX photos ON reviews_photos(review_id);';
+
+    const reportedIndexCommand = 'CREATE INDEX not_reported ON reviews(product_id, reported);';
+
+    const productCharacteristicsIndexCommand = 'CREATE INDEX product_id ON characteristics(product_id);';
+
+    const createCharacteristicIndex = () => {
+      pool.connect()
+      .then((client) => {
+        client.query(productCharacteristicsIndexCommand)
+        .then(() => {
+          client.release();
+          console.log('Created product index on characteristics')
+        })
+      })
+    }
+
+    const createPhotoIndex = () => {
+      pool.connect()
+      .then((client) => {
+        client.query(photosIndexCommand)
+        .then(() => {
+          client.release();
+          console.log('Created photos index on reviews_photos');
+        })
+      })
+    };
+
+    const createReportedIndex = () => {
+      pool.connect()
+      .then((client) => {
+        client.query(reportedIndexCommand)
+        .then(() => {
+          client.release();
+          console.log('Created reported index on reviews');
+        })
+      })
+    };
+
     const updateIdSequence = (tableName) => {
       pool.connect()
       .then((client) => {
@@ -93,10 +132,10 @@ const prepareDB = async(pool) => {
     }; // upload characteristics file to db, then upload the characteristics_reviews which references the reviews and characteristics id
 
     const reviewCbPhotos = () => {
-      upload(pool, photosCommand, 'reviews_photos', () => updateIdSequence('reviews_photos'))
-    }; // upload the photos after you have the reviews uploaded since it references review id
+      upload(pool, photosCommand, 'reviews_photos', () => updateIdSequence('reviews_photos'), createPhotoIndex)
+    }; // upload the photos after you have the reviews uploaded since it references review id, and create a photo index on the review_id column
 
-    upload(pool, reviewsCommand, 'reviews', () => updateIdSequence('reviews'), reviewCbPhotos, reviewCbCharacteristics, reviewCbRatings); // upload reviews file to db, then we can read and build the photos and characteristics csv files, as well as building the meta-table for ratings from the review data and upating the sequence for the reviews' ids column
+    upload(pool, reviewsCommand, 'reviews', () => updateIdSequence('reviews'), reviewCbPhotos, reviewCbCharacteristics, reviewCbRatings, createReportedIndex); // upload reviews file to db, then we can read and build the photos and characteristics csv files, as well as building the meta-table for ratings from the review data and upating the sequence for the reviews' ids column, and finally create an index on the product_id and reported columns
 
 
   } catch(err) {
